@@ -1090,8 +1090,9 @@ async function startQuiz(){
   try {
     const res = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' }, // text/plain evita preflight CORS no Apps Script
       signal: abortCtrl.signal,
+      redirect: 'follow',
       body: JSON.stringify({
         domain: c.domain,
         level:  c.level,
