@@ -39,8 +39,10 @@ body {
 /* ── SCREENS ── */
 .screen { display:none }
 .screen.on { display:block }
-#s-setup.on { display:flex }
+#s-setup { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+#s-setup.hidden { display:none }
 #s-result.on { display:flex }
+#s-loading.on { display:flex; align-items:center; justify-content:center; min-height:100vh }
 
 /* ══════════════════════════════
    SETUP
@@ -621,10 +623,6 @@ body {
 #s-result { position:relative }
 
 /* ── LOADING SCREEN ── */
-#s-loading.on { display:flex; align-items:center; justify-content:center; min-height:100vh }
-.loading-wrap { text-align:center; display:flex; flex-direction:column; align-items:center; gap:1.2rem }
-.loading-ring { margin-bottom:.5rem }
-@keyframes spin { to { transform:rotate(360deg) } }
 #s-loading circle:last-child { transform-origin:32px 32px; animation:spin 1.1s linear infinite }
 .loading-title {
   font-family:'Cormorant Garamond',serif;
@@ -838,7 +836,7 @@ body {
 <body>
 
 <!-- ══ SETUP LANDING ══ -->
-<div id="s-setup" class="screen on">
+<div id="s-setup" class="screen">
   <div class="brand-top">Instituto MD Talk</div>
   <h1 class="setup-title">Quiz <em>Engine</em></h1>
   <p class="setup-sub">Grammar precision for the international stage.</p>
@@ -1003,16 +1001,23 @@ body {
 <script>
 // ── SCREEN ──
 function show(id){
-  ['s-setup','s-quiz','s-result','s-loading'].forEach(s=>{
+  // hide non-setup screens
+  ['s-quiz','s-result','s-loading'].forEach(s=>{
     const el=document.getElementById(s);
-    el.classList.remove('on');
-    el.style.display='none';
+    if(el){ el.classList.remove('on'); el.style.display='none'; }
   });
-  const t=document.getElementById(id);
-  t.style.display='';
-  requestAnimationFrame(()=>t.classList.add('on'));
+  // setup uses .hidden toggle
+  const setup=document.getElementById('s-setup');
+  if(id==='s-setup'){
+    setup.classList.remove('hidden');
+  } else {
+    setup.classList.add('hidden');
+    const t=document.getElementById(id);
+    if(!t) return;
+    t.style.display='';
+    requestAnimationFrame(()=>t.classList.add('on'));
+  }
 }
-document.getElementById('s-setup').style.display='';
 
 // ── WIZARD ──
 let wizStep = 0;
