@@ -542,61 +542,62 @@ body {
 ══════════════════════════════ */
 .overlay {
   display:none; position:fixed; inset:0; z-index:200;
-  background:rgba(6,15,32,.88); backdrop-filter:blur(6px);
+  background:rgba(6,15,32,.7); backdrop-filter:blur(8px);
   align-items:center; justify-content:center; padding:1rem;
 }
 .overlay.on { display:flex }
 .modal {
-  background:var(--navy-mid);
-  border:1px solid rgba(196,164,90,.2);
+  background:#FFFFFF;
   border-radius:var(--r);
   width:min(500px,100%); max-height:88vh; overflow-y:auto;
-  box-shadow:0 24px 64px rgba(0,0,0,.5);
+  box-shadow:0 24px 64px rgba(0,0,0,.22);
+  border-top:3px solid var(--gold);
 }
 .modal-hd {
-  padding:1.6rem 1.8rem; border-bottom:1px solid var(--border);
+  padding:1.5rem 1.8rem;
+  border-bottom:1px solid rgba(11,29,58,.08);
   display:flex; align-items:center; gap:1.2rem;
-  background:rgba(255,255,255,.03);
-  border-radius:var(--r) var(--r) 0 0;
+  background:#F8F5EF;
+  border-radius:calc(var(--r) - 1px) calc(var(--r) - 1px) 0 0;
 }
 .modal-av {
-  width:50px; height:50px; border-radius:50%; flex-shrink:0;
-  background:rgba(196,164,90,.15); border:1.5px solid rgba(196,164,90,.4);
+  width:48px; height:48px; border-radius:50%; flex-shrink:0;
+  background:rgba(196,164,90,.15); border:1.5px solid rgba(196,164,90,.5);
   display:flex; align-items:center; justify-content:center;
-  font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--gold);
+  font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--gold);
 }
-.modal-nm { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--white); font-weight:300 }
-.modal-role { font-size:.57rem; letter-spacing:.13em; text-transform:uppercase; color:var(--gold); margin-top:.2rem; opacity:.8 }
+.modal-nm { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--navy); font-weight:400 }
+.modal-role { font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-top:.2rem; opacity:.9 }
 .modal-body { padding:1.6rem 1.8rem }
 .modal-quote {
   font-family:'Cormorant Garamond',serif;
-  font-size:1rem; font-style:italic; color:rgba(255,255,255,.85);
-  line-height:1.7; padding:.9rem 1.1rem;
-  background:var(--gold-bg); border-left:2.5px solid var(--gold);
-  border-radius:0 8px 8px 0; margin-bottom:1.5rem;
+  font-size:1.05rem; font-style:italic; color:var(--navy);
+  line-height:1.72; padding:1rem 1.2rem;
+  background:#F8F5EF; border-left:2.5px solid var(--gold);
+  border-radius:0 8px 8px 0; margin-bottom:1.6rem;
 }
 .msec-hd {
-  font-size:.58rem; letter-spacing:.18em; text-transform:uppercase;
+  font-size:.57rem; letter-spacing:.2em; text-transform:uppercase;
   color:var(--gold); margin-bottom:.65rem; padding-bottom:.35rem;
-  border-bottom:1px solid var(--border); opacity:.8;
+  border-bottom:1px solid rgba(196,164,90,.2);
 }
 .mrec {
-  display:flex; gap:.7rem; padding:.65rem .8rem;
-  background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:.3rem;
+  display:flex; gap:.75rem; padding:.7rem .9rem;
+  background:#F8F5EF; border-radius:8px; margin-bottom:.35rem;
 }
-.mrec-ico { flex-shrink:0; font-size:.82rem; margin-top:1px; color:var(--gold) }
-.mrec-txt { font-size:.79rem; color:rgba(255,255,255,.7); line-height:1.55 }
-.mrec-txt strong { color:var(--white) }
+.mrec-ico { flex-shrink:0; font-size:.85rem; margin-top:2px; color:var(--gold) }
+.mrec-txt { font-size:.8rem; color:rgba(11,29,58,.7); line-height:1.6 }
+.mrec-txt strong { color:var(--navy); font-weight:600 }
 .mrec-txt a { color:var(--gold); text-decoration:none }
 .modal-close {
   display:block; width:100%; padding:.85rem; border:none;
-  background:var(--gold); color:var(--navy);
+  background:var(--navy); color:#fff;
   font-family:'Raleway',sans-serif; font-size:.68rem;
-  font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+  font-weight:600; letter-spacing:.2em; text-transform:uppercase;
   cursor:pointer; transition:background .18s;
   border-radius:0 0 var(--r) var(--r);
 }
-.modal-close:hover { background:var(--gold2) }
+.modal-close:hover { background:var(--navy-mid) }
 
 /* ── BACK BUTTON (topbar) ── */
 .tbar-back {
@@ -1430,27 +1431,112 @@ function goSetup(){
 
 // ── MENTOR ──
 function openMentor(){
-  const pct=Math.round(S.score/S.qs.length*100);
-  document.getElementById('m-quote').innerHTML=
-    pct>=80?`"Você demonstrou domínio real. Agora é hora de elevar o nível — precisão clínica e sofisticação acadêmica. É nesse gap que a excelência se forma."`
-    :pct>=60?`"Você está no caminho certo. Mas 'bom' não basta para um congresso internacional. Quero que você chegue lá com autoridade — não apenas competência."`
-    :`"Esses gaps que aparecem aqui são exatamente onde começamos. Não é fraqueza — é diagnóstico. E com o diagnóstico certo, o tratamento funciona."`;
-  const wi=S.ans.map((a,i)=>a===false?i:-1).filter(x=>x>=0);
-  const wt=[...new Set(wi.map(i=>S.qs[i]?.type))];
-  const wk=[...new Set(wi.map(i=>S.qs[i]?.topic))];
-  let ph='';
-  if(!wi.length) ph=`<div class="mrec"><div class="mrec-ico">★</div><div class="mrec-txt">Desempenho impecável. Foque em <strong>registro C2</strong> — hedging avançado, voice in academic writing, e sofisticação lexical (NEJM, Lancet).</div></div>`;
-  else{
-    if(wt.includes('fill')) ph+=`<div class="mrec"><div class="mrec-ico">◆</div><div class="mrec-txt">Fill in the Blank indica lacunas em <strong>produção ativa</strong>. Módulo de escrita no Portal — escreva, não apenas reconheça.</div></div>`;
-    if(wk.includes('grammar')) ph+=`<div class="mrec"><div class="mrec-ico">◆</div><div class="mrec-txt">Revise <strong>Tenses in Context</strong> — conditionals e passive voice aparecem toda semana em publicações indexadas.</div></div>`;
-    if(wk.includes('vocab')||wk.includes('clinical')) ph+=`<div class="mrec"><div class="mrec-ico">◆</div><div class="mrec-txt">Construa seu <strong>Banco de Termos</strong> no Portal com as palavras de hoje. Revisão espaçada: 48h, 7 dias, 30 dias.</div></div>`;
-    if(wk.includes('presentation')) ph+=`<div class="mrec"><div class="mrec-ico">◆</div><div class="mrec-txt">Lacunas em <strong>linguagem de apresentação</strong>. Aula de Signposting Language no Portal — pratique em voz alta.</div></div>`;
+  const pct = Math.round(S.score / S.qs.length * 100);
+
+  // Quote baseada na performance
+  document.getElementById('m-quote').innerHTML =
+    pct >= 90 ? `"Desempenho excepcional. Agora o desafio é consistência — domínio real é o que aparece quando você está cansado, com pressa, no palco de um congresso."`
+    : pct >= 70 ? `"Você está no caminho certo. Mas 'bom' não basta para um congresso internacional. Quero que você chegue lá com autoridade — não apenas competência."`
+    : pct >= 50 ? `"Esses gaps que aparecem aqui são exatamente onde começamos. Não é fraqueza — é diagnóstico. E com o diagnóstico certo, o tratamento funciona."`
+    : `"Quanto mais cedo você mapeou isso, melhor. Agora temos um ponto de partida claro. Vamos trabalhar estrutura por estrutura — sem atalhos."`;
+
+  // Identificar erros com contexto real da questão
+  const wrongIdxs = S.ans.map((a,i) => a === false ? i : -1).filter(x => x >= 0);
+  const wrongQs   = wrongIdxs.map(i => S.qs[i]).filter(Boolean);
+
+  let ph = '';
+
+  if (!wrongQs.length) {
+    ph = `<div class="mrec"><div class="mrec-ico">★</div><div class="mrec-txt">Acertou tudo. Agora suba o nível — tente <strong>Hard</strong> ou <strong>Hardcore</strong> na próxima rodada, e ative todos os tipos de pergunta.</div></div>`;
+  } else {
+    // Detectar padrões gramaticais nos erros a partir do texto das questões
+    const wrongTexts = wrongQs.map(q => (q.q || q.inst || '').toLowerCase());
+    const wrongExps  = wrongQs.map(q => (q.exp || '').toLowerCase());
+    const allText    = wrongTexts.join(' ') + ' ' + wrongExps.join(' ');
+
+    // Listar as questões erradas com a estrutura identificada
+    wrongQs.forEach(q => {
+      const stem = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0, 80);
+      const structure = detectStructure(allText, q);
+      ph += `<div class="mrec">
+        <div class="mrec-ico">✗</div>
+        <div class="mrec-txt">
+          <strong>${structure}</strong><br>
+          <span style="color:rgba(11,29,58,.5);font-size:.74rem">${stem}${stem.length >= 80 ? '…' : ''}</span>
+        </div>
+      </div>`;
+    });
   }
-  document.getElementById('m-priorities').innerHTML=`<div style="margin-bottom:1.4rem"><div class="msec-hd">Prioridades desta semana</div>${ph}</div>`;
-  const da={medical:'Para <strong>Medical English</strong>: leia um case report no UpToDate em inglês toda semana. Sublinha estruturas que você não usaria naturalmente.',business:'Para <strong>Business English</strong>: TEDMed talks com transcript ativo. Copie uma frase de hedging por vídeo.',regular:'Para <strong>Regular English</strong>: podcast no trajeto, série sem legenda. Imersão controlada e consistente.',mixed:'Base <strong>mixed-domain</strong>: um domínio por quinzena. Profundidade antes de amplitude.'};
-  document.getElementById('m-strategy').innerHTML=`<div style="margin-bottom:1.4rem"><div class="msec-hd">Estratégia de estudo</div><div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">${da[S.cfg.domain]||da.mixed}</div></div><div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Um quiz por semana no nível <strong>acima</strong> do seu conforto. O crescimento acontece no que ainda incomoda.</div></div></div>`;
-  document.getElementById('m-next').innerHTML=`<div><div class="msec-hd">Próxima etapa TMEP</div><div class="mrec"><div class="mrec-ico">✦</div><div class="mrec-txt">Acesse o <strong>Portal do Aluno</strong>: <a href="https://institutomdtalk.github.io/portaldoaluno/" target="_blank">institutomdtalk.github.io/portaldoaluno/</a> — Banco de Termos, Biblioteca e agendamento.</div></div></div>`;
+
+  document.getElementById('m-priorities').innerHTML =
+    `<div style="margin-bottom:1.4rem">
+      <div class="msec-hd">${wrongQs.length ? `${wrongQs.length} estrutura${wrongQs.length > 1 ? 's' : ''} para revisar` : 'Resultado'}</div>
+      ${ph}
+    </div>`;
+
+  // Recomendações específicas baseadas nos padrões de erro
+  const allText2 = wrongQs.map(q => (q.q||q.inst||'') + ' ' + (q.exp||'')).join(' ').toLowerCase();
+  let recs = '';
+
+  if (!wrongQs.length) {
+    recs = `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Avance para o próximo nível e experimente questões do tipo <strong>Connect Columns</strong> — são as mais exigentes em termos de precisão gramatical.</div></div>`;
+  } else {
+    if (/perfect|perfect passive|been|already|yet|since|just/.test(allText2))
+      recs += `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Revise <strong>Present Perfect e Perfect Passive</strong> — essas estruturas dominam o inglês clínico escrito. Identifique-as em um case report esta semana.</div></div>`;
+    if (/conditional|had.*would|if.*past/.test(allText2))
+      recs += `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Pratique os <strong>Conditionals 2 e 3</strong> em voz alta — são a base do raciocínio clínico em inglês: "If we had acted sooner…"</div></div>`;
+    if (/reported|said that|indirect/.test(allText2))
+      recs += `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Treine <strong>Reported Speech com backshift</strong> — é o que aparece em prontuários, handovers e discussões de caso internacionais.</div></div>`;
+    if (/passive|was administered|was performed|were/.test(allText2))
+      recs += `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">A <strong>Voz Passiva</strong> é o padrão em documentação clínica. Reescreva 3 sentenças ativas do seu dia em passiva — até isso virar reflexo.</div></div>`;
+    if (/modal|must|should|might|can |could/.test(allText2))
+      recs += `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Os <strong>Modal Verbs</strong> expressam grau de certeza e obrigação — fundamentais em prognóstico e prescrição. Revise: must / should / might / can.</div></div>`;
+    if (/hedg|appear|seem|suggest|tend|likely/.test(allText2))
+      recs += `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt"><strong>Hedging</strong> é obrigatório em escrita acadêmica: appear, seem, tend to, suggest, be likely to. Leia um abstract do NEJM e identifique cada hedge.</div></div>`;
+    if (!recs)
+      recs = `<div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">Revise as explicações das questões que errou — cada uma contém a regra completa. Releia em voz alta e crie um exemplo próprio com cada estrutura.</div></div>`;
+  }
+
+  const da = {
+    medical:  'Leia um <strong>case report</strong> no UpToDate em inglês toda semana. Sublinha as estruturas que você não usaria naturalmente — essas são suas metas.',
+    business: '<strong>TEDMed talks</strong> com transcript ativo. Copie uma frase de hedging ou argumentação por vídeo. Quantidade pequena, revisão constante.',
+    regular:  'Podcast no trajeto, série sem legenda. <strong>Imersão controlada</strong> — expor o ouvido antes de exigir produção.',
+    mixed:    'Um domínio por quinzena. <strong>Profundidade antes de amplitude</strong> — gramática médica e business têm registros distintos, trate-os separadamente.'
+  };
+
+  document.getElementById('m-strategy').innerHTML =
+    `<div style="margin-bottom:1.4rem">
+      <div class="msec-hd">O que fazer agora</div>
+      ${recs}
+      <div class="mrec"><div class="mrec-ico">→</div><div class="mrec-txt">${da[S.cfg.domain]||da.mixed}</div></div>
+    </div>`;
+
+  document.getElementById('m-next').innerHTML =
+    `<div>
+      <div class="msec-hd">Próxima etapa TMEP</div>
+      <div class="mrec"><div class="mrec-ico">✦</div><div class="mrec-txt">Acesse o <strong>Portal do Aluno</strong>: <a href="https://institutomdtalk.github.io/portaldoaluno/" target="_blank">institutomdtalk.github.io/portaldoaluno/</a> — registre os termos de hoje, acesse a Biblioteca e agende sua próxima aula.</div></div>
+    </div>`;
+
   document.getElementById('mentor-overlay').classList.add('on');
+}
+
+function detectStructure(allText, q) {
+  const t = ((q.q||q.inst||'') + ' ' + (q.exp||'')).toLowerCase();
+  if (/future perfect/.test(t))       return 'Future Perfect';
+  if (/past perfect/.test(t))         return 'Past Perfect';
+  if (/present perfect passive/.test(t)) return 'Present Perfect Passive';
+  if (/present perfect/.test(t))      return 'Present Perfect';
+  if (/third conditional/.test(t))    return 'Third Conditional';
+  if (/second conditional/.test(t))   return 'Second Conditional';
+  if (/first conditional/.test(t))    return 'First Conditional';
+  if (/reported speech|backshift/.test(t)) return 'Reported Speech';
+  if (/passive voice|was.*by|were.*by/.test(t)) return 'Passive Voice';
+  if (/modal verb|must|should|might/.test(t)) return 'Modal Verbs';
+  if (/hedg|appear to|seem to/.test(t)) return 'Academic Hedging';
+  if (/present continuous/.test(t))   return 'Present Continuous';
+  if (/past simple/.test(t))          return 'Past Simple';
+  if (/since.*for|for.*since/.test(t)) return 'Since vs. For';
+  return 'Estrutura gramatical';
 }
 function closeMentor(){document.getElementById('mentor-overlay').classList.remove('on');}
 document.getElementById('mentor-overlay').addEventListener('click',function(e){if(e.target===this)closeMentor();});
