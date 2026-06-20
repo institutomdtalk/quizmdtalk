@@ -39,23 +39,21 @@ body {
 /* ── SCREENS ── */
 .screen { display:none }
 .screen.on { display:block }
-#s-setup { display:flex; flex-direction:column; align-items:center; justify-content:center; }
-#s-setup.hidden { display:none }
 #s-result.on { display:flex }
 #s-loading.on { display:flex; align-items:center; justify-content:center; min-height:100vh }
+
+/* setup is always a flex column, hidden via .hidden class */
+#s-setup {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:100vh;
+  padding:4rem 1.5rem 5rem;
+  background: radial-gradient(ellipse at 60% 0%, rgba(196,164,90,.07) 0%, transparent 60%), var(--navy);
+}
+#s-setup.hidden { display:none }
 
 /* ══════════════════════════════
    SETUP
 ══════════════════════════════ */
-#s-setup {
-  min-height:100vh;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  padding:4rem 1.5rem 5rem;
-  background: radial-gradient(ellipse at 60% 0%, rgba(196,164,90,.07) 0%, transparent 60%),
-              var(--navy);
-}
 
 .brand-top {
   font-size:.62rem; letter-spacing:.35em; text-transform:uppercase;
@@ -836,7 +834,7 @@ body {
 <body>
 
 <!-- ══ SETUP LANDING ══ -->
-<div id="s-setup" class="screen">
+<div id="s-setup">
   <div class="brand-top">Instituto MD Talk</div>
   <h1 class="setup-title">Quiz <em>Engine</em></h1>
   <p class="setup-sub">Grammar precision for the international stage.</p>
