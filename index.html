@@ -1084,84 +1084,33 @@ async function startQuiz(){
   show('s-loading');
   abortCtrl = new AbortController();
 
-  const domainMap = { medical:'Medical English (clinical, hospital, patient communication)', business:'Business English (professional, academic, presentations)', regular:'General English (everyday, intermediate-advanced)', mixed:'Mixed English (medical, business, and general contexts)' };
-  const levelMap  = { b1:'Easy (B1 — basic structures, common vocabulary)', b2:'Medium (B2 — intermediate grammar, academic vocabulary)', c1:'Hard (C1 — complex grammar, advanced collocations)', mixed:'Hardcore (all levels, varied complexity)' };
-  const typeMap   = { mc:'multiple_choice', fill:'fill_in_blank', match:'connect_columns' };
-  const types     = c.types.map(t=>typeMap[t]).join(', ');
-
-  const prompt = `You are Thaiana Faria, expert linguist and creator of the TMEP Medical English Method. Generate exactly 10 grammar quiz questions in English for Brazilian physicians.
-
-Configuration:
-- Domain: ${domainMap[c.domain]||domainMap.mixed}
-- Difficulty: ${levelMap[c.level]||levelMap.mixed}
-- Question types requested: ${types}
-- Topic: Grammar only (tenses, conditionals, reported speech, passive voice, modal verbs, hedging, academic writing structures)
-
-Rules:
-1. All 10 questions must be DIFFERENT — no repeated structures or vocabulary
-2. Distribute question types roughly evenly across the requested types
-3. Each question must be clinically or professionally relevant
-4. Explanations must be pedagogically rich — include grammar rule, usage context, and why it matters for international communication
-5. Return ONLY valid JSON, no markdown, no preamble
-
-JSON schema:
-{
-  "questions": [
-    {
-      "type": "multiple_choice",
-      "q": "question text (HTML allowed: <strong>, <em>)",
-      "opts": ["A", "B", "C", "D"],
-      "ans": 0,
-      "exp": "explanation (HTML allowed)"
-    },
-    {
-      "type": "fill_in_blank",
-      "q": "sentence with blank indicated",
-      "ans": "exact answer",
-      "hint": "brief hint",
-      "exp": "explanation"
-    },
-    {
-      "type": "connect_columns",
-      "inst": "instruction text",
-      "left": ["item1", "item2", "item3", "item4"],
-      "right": ["match1", "match2", "match3", "match4"],
-      "ans": [0, 1, 2, 3],
-      "exp": "explanation"
-    }
-  ]
-}
-
-For connect_columns: ans[i] is the index in right[] that matches left[i].
-Generate exactly 10 questions now.`;
+  // ── URL do seu Apps Script — substitua após publicar ──
+  const PROXY_URL = 'https://script.google.com/macros/s/AKfycbyDkZFXeBq0xoZQJVRPJHOFKItjRdvXk2R655SQtmtND9nuMuwfion1wZgIMWW7wBlQPQ/exec';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       signal: abortCtrl.signal,
       body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:4000,
-        messages:[{ role:'user', content:prompt }]
+        domain: c.domain,
+        level:  c.level,
+        types:  c.types
       })
     });
 
     const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const clean = text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
+    if (!data.ok) throw new Error(data.error || 'Erro no proxy');
 
-    // Normalize types
     const typeRemap = { multiple_choice:'mc', fill_in_blank:'fill', connect_columns:'match' };
-    S.qs = parsed.questions.map(q => ({ ...q, type: typeRemap[q.type] || q.type }));
+    S.qs = data.questions.map(q => ({ ...q, type: typeRemap[q.type] || q.type }));
 
     show('s-quiz');
     render();
 
   } catch(err) {
     if(err.name === 'AbortError') return;
-    // Fallback to local bank
+    // Fallback banco local
     S.qs = pool(c);
     show('s-quiz');
     render();
@@ -1187,38 +1136,28 @@ function doBack(){
 // ── LOCAL FALLBACK BANK ──
 const QB = {
   mc:[
-    {domain:'medical',level:'b2',topic:'vocab',q:'A patient presents with <strong>dyspnea</strong>. Which best describes this symptom?',opts:['Difficulty swallowing','Shortness of breath','Chest pain','Abnormal heart rhythm'],ans:1,exp:'<strong>Dyspnea</strong> (Greek <em>dys-</em> + <em>pnoia</em>) means labored breathing. Distinct from <em>dysphagia</em> (swallowing difficulty) and <em>dysrhythmia</em> (abnormal rhythm). Mastering Greek and Latin roots dramatically accelerates medical vocabulary acquisition.'},
-    {domain:'medical',level:'b2',topic:'grammar',q:'The attending said: "The biopsy results ___ by 3 PM tomorrow."',opts:['will be received','will have been received','are going to receive','would receive'],ans:1,exp:'<strong>Future Perfect Passive</strong> — expresses an action completed before a specific future point. In clinical English this structure is essential in prognosis discussions, procedural scheduling, and operative reports.'},
-    {domain:'medical',level:'c1',topic:'clinical',q:'During tumor board, a colleague describes the mass as <strong>"indolent."</strong> This means:',opts:['Rapidly progressing','Causing severe pain','Slow-growing, minimal symptoms','Benign by pathology'],ans:2,exp:'<strong>Indolent</strong> describes disease that progresses slowly with minimal symptoms. It does not confirm benign histology — an indolent lymphoma is still malignant. A critical nuance in oncology communication with international colleagues.'},
-    {domain:'medical',level:'c1',topic:'presentation',q:'At an international congress, you want to hedge your conclusion. Which is most appropriate?',opts:['"These results prove early intervention works."','"Our data suggests a potential correlation, though further trials are warranted."','"We are certain this treatment cures the condition."','"Obviously, the control group showed no benefit."'],ans:1,exp:'<strong>Academic hedging</strong> protects intellectual honesty: <em>"suggests," "potential," "may indicate," "further research is warranted."</em> Overconfidence ("proves," "obviously") undermines scientific credibility in international publishing.'},
-    {domain:'medical',level:'b2',topic:'vocab',q:'Which term refers to <strong>fluid accumulation in the abdominal cavity</strong>?',opts:['Anasarca','Ascites','Edema','Hydrothorax'],ans:1,exp:'<strong>Ascites</strong> = fluid in the peritoneal cavity (cirrhosis, heart failure, malignancy). <em>Anasarca</em> = generalized edema. <em>Hydrothorax</em> = pleural effusion. <em>Edema</em> is the broad term for tissue fluid accumulation.'},
-    {domain:'medical',level:'c1',topic:'grammar',q:'"Had the antibiotic been administered earlier, the patient ___ required surgical intervention."',opts:['would not have','will not have','would not','had not'],ans:0,exp:'<strong>Third Conditional</strong> — counterfactual past: <em>"If + Past Perfect → would have + Past Participle."</em> Indispensable in clinical case debriefs and retrospective analysis of management decisions.'},
-    {domain:'business',level:'b2',topic:'vocab',q:'A medical startup has reached <strong>"unicorn status."</strong> This means:',opts:['It was acquired by a larger company','Valued at over $1 billion','It has gone public on a stock exchange','It operates without physical offices'],ans:1,exp:'A <strong>unicorn</strong> is a privately held startup valued at $1B+. Coined by venture capitalist Aileen Lee in 2013. Essential for physicians involved in medtech entrepreneurship or investor relations.'},
-    {domain:'business',level:'c1',topic:'grammar',q:'Which opening is most appropriate for a grant application?',opts:['"Hey, I want to tell you about our study."','"We are writing to respectfully submit our proposal for consideration."','"Please find herewith our attached proposal for your kind perusal."','"Our team put together a study and we think you\'ll like it."'],ans:1,exp:'Option B: <strong>professional, clear, direct</strong> — without archaic constructions. "Herewith" and "kind perusal" (option C) are dated. Options A and D are too informal for institutional communication.'},
-    {domain:'regular',level:'b1',topic:'grammar',q:'She has been working at the hospital ___ 2018.',opts:['for','since','during','from'],ans:1,exp:'<strong>Since</strong> = specific point in time (2018, Monday, last year). <strong>For</strong> = duration (five years, three months). This Present Perfect distinction is among the most common errors across all proficiency levels.'},
-    {domain:'regular',level:'b2',topic:'vocab',q:'The word <strong>"equivocal"</strong> means:',opts:['Clearly defined','Ambiguous or open to multiple interpretations','Proven by evidence','Relating to equal values'],ans:1,exp:'<strong>Equivocal</strong> = open to two or more interpretations. In clinical contexts, "equivocal findings" means results that don\'t definitively point to a diagnosis. From Latin: <em>aequus</em> (equal) + <em>vox</em> (voice).'},
-    {domain:'medical',level:'c2',topic:'clinical',q:'A senior consultant describes a patient\'s prognosis as <strong>"guarded."</strong> This implies:',opts:['The prognosis is excellent','The outcome is uncertain and potentially serious','The patient is currently stable','Further investigations are needed'],ans:1,exp:'<strong>Guarded prognosis</strong> = uncertain outcome with significant risk of adverse results. Sits between "poor" (likely negative) and "fair" (some hope). Prognostic vocabulary is core register in clinical handovers.'},
-    {domain:'medical',level:'b2',topic:'vocab',q:'The prefix <strong>"brady-"</strong> indicates:',opts:['Excessive','Slow','Painful','Without'],ans:1,exp:'<strong>Brady-</strong> (Greek <em>bradys</em>) = slow: bradycardia, bradypnea, bradykinesia. Its opposite is <em>tachy-</em> (fast). A morphological framework is the fastest route to medical English fluency.'},
+    {domain:'medical',level:'b2',topic:'grammar',q:'The attending said: "The biopsy results ___ by 3 PM tomorrow."',opts:['will be received','will have been received','are going to receive','would receive'],ans:1,exp:'<strong>Future Perfect Passive</strong> — expresses an action completed before a specific future point. In clinical English this structure appears constantly in prognosis discussions and procedural scheduling.'},
+    {domain:'medical',level:'c1',topic:'grammar',q:'"Had the antibiotic been administered earlier, the patient ___ required surgical intervention."',opts:['would not have','will not have','would not','had not'],ans:0,exp:'<strong>Third Conditional</strong> — counterfactual past: <em>If + Past Perfect → would have + Past Participle.</em> Indispensable in clinical case debriefs and retrospective analysis of management decisions.'},
     {domain:'medical',level:'c1',topic:'grammar',q:'Original statement: "I have not reviewed the CT scan yet." Correct reported speech:',opts:['He said that he has not reviewed the CT scan yet.','He said that he had not reviewed the CT scan yet.','He said that he did not review the CT scan yet.','He said he hasn\'t reviewed the CT scan yet.'],ans:1,exp:'<strong>Backshift in reported speech</strong>: Present Perfect → Past Perfect. Essential when documenting patient histories and transcribing clinical communication in international settings.'},
-    {domain:'mixed',level:'mixed',topic:'vocab',q:'"The trial data was <strong>compelling</strong>." Which meaning applies?',opts:['Inconclusive','Evoking strong conviction','Mandatory','Statistically significant'],ans:1,exp:'<strong>Compelling</strong> = powerfully convincing. "Compelling evidence" suggests a strong persuasive case — without necessarily reaching a statistical threshold. Note: "significant" carries a precise statistical meaning in academic writing.'},
+    {domain:'business',level:'c1',topic:'grammar',q:'Which opening is most appropriate for a grant application?',opts:['"Hey, I want to tell you about our study."','"We are writing to respectfully submit our proposal for consideration."','"Please find herewith our attached proposal for your kind perusal."','"Our team put together a study and we think you\'ll like it."'],ans:1,exp:'Option B strikes the correct register — <strong>professional, clear, and direct</strong> without archaic constructions. "Herewith" and "kind perusal" are dated. Options A and D are too informal for institutional communication.'},
+    {domain:'regular',level:'b1',topic:'grammar',q:'She has been working at the hospital ___ 2018.',opts:['for','since','during','from'],ans:1,exp:'<strong>Since</strong> = specific point in time. <strong>For</strong> = duration. This Present Perfect distinction is among the most common errors across all proficiency levels and appears constantly in clinical English.'},
+    {domain:'medical',level:'b2',topic:'grammar',q:'The patient ___ three surgeries before the final diagnosis was confirmed.',opts:['has undergone','had undergone','underwent','was undergoing'],ans:1,exp:'<strong>Past Perfect</strong> ("had undergone") is required because the surgeries were completed before another past event (the diagnosis). Sequence of tenses is critical in case histories and operative reports.'},
+    {domain:'regular',level:'b2',topic:'grammar',q:'By the time the results arrive, the team ___ a treatment plan.',opts:['will prepare','will have prepared','prepares','would prepare'],ans:1,exp:'<strong>Future Perfect</strong> ("will have prepared") marks an action completed before a specific future moment. Common in clinical planning: "By the time the patient arrives, we will have reviewed the scans."'},
+    {domain:'medical',level:'c1',topic:'grammar',q:'Which sentence uses the passive voice correctly in a clinical context?',opts:['The nurse administered the medication at 8 AM.','The medication was administered at 8 AM.','They had given the patient the medication.','Someone gave medication to the patient.'],ans:1,exp:'<strong>Passive voice</strong> is the standard in clinical documentation — it focuses on the action rather than the agent. "The medication was administered" is preferred in nursing notes, operative reports, and discharge summaries worldwide.'},
   ],
   fill:[
-    {domain:'medical',level:'b2',topic:'vocab',q:'A patient unable to feel pain has <strong>an___</strong>.',ans:'analgesia',hint:'Greek: an- (without) + algos (pain)',exp:'<strong>Analgesia</strong> = absence of pain sensation. Distinct from <em>anesthesia</em> = total loss of sensation. The adjective <em>analgesic</em> applies to pain-relieving drugs.'},
     {domain:'medical',level:'c1',topic:'grammar',q:'The surgery ___ (already / perform) three times this week by the same team.',ans:'has already been performed',hint:'Present Perfect Passive',exp:'<strong>Present Perfect Passive</strong>: "has/have + been + past participle." The passive voice dominates clinical documentation — it focuses on action rather than agent, the standard in formal medical reporting.'},
-    {domain:'medical',level:'b2',topic:'vocab',q:'Inflammation of the liver: <strong>hep___</strong>.',ans:'hepatitis',hint:'Root: hepato- (liver) + -itis (inflammation)',exp:'<strong>Hepatitis</strong> = Greek <em>hepar</em> + <em>-itis</em>. The suffix <em>-itis</em> is one of the most productive in medical English: gastritis, appendicitis, encephalitis, dermatitis.'},
     {domain:'regular',level:'b2',topic:'grammar',q:'By the time the conference starts, we ___ (rehearse) at least four times.',ans:'will have rehearsed',hint:'Future Perfect — completed before a future point',exp:'<strong>Future Perfect</strong> ("will have + past participle") marks an action completed before a specific future moment — essential in academic and professional planning contexts.'},
-    {domain:'business',level:'c1',topic:'writing',q:'"The results ___ to suggest that early detection reduces mortality." (hedging verb)',ans:'appear',hint:'A verb of seeming — not a modal auxiliary',exp:'<strong>Hedging lexical verbs</strong> — appear, seem, tend, suggest — soften a claim with sophistication beyond modal auxiliaries. Preferred in high-impact journal writing.'},
-    {domain:'medical',level:'b1',topic:'vocab',q:'The normal resting heart rate for adults is ___ to ___ bpm. (e.g. 60 to 100)',ans:'60 to 100',hint:'Standard clinical reference range',exp:'Normal resting HR: <strong>60–100 bpm</strong>. Below 60 = bradycardia; above 100 = tachycardia. Stating and contextualizing reference ranges in English is foundational for international case presentations.'},
-    {domain:'medical',level:'c1',topic:'clinical',q:'PRN stands for the Latin phrase <strong>pro re ___</strong>, meaning "as needed."',ans:'nata',hint:'Third word in the Latin phrase',exp:'<strong>Pro re nata (PRN)</strong> = "as the situation demands." Related: <em>bid</em> (twice daily), <em>tid</em> (three times daily), <em>qid</em> (four times daily), <em>hs</em> (at bedtime).'},
     {domain:'regular',level:'b1',topic:'grammar',q:'If I ___ (know) about the conference earlier, I would have submitted an abstract.',ans:'had known',hint:'Third Conditional — Past Perfect in the if-clause',exp:'<strong>Third Conditional</strong>: "If + had + past participle → would have + past participle." Indispensable in clinical case discussions: "If we had acted sooner…"'},
+    {domain:'medical',level:'b2',topic:'grammar',q:'The patient ___ (not / eat) anything since midnight, as required before surgery.',ans:'had not eaten',hint:'Past Perfect — before another past event',exp:'<strong>Past Perfect</strong> ("had not eaten") expresses an action that was not completed before a reference point in the past. Critical in pre-operative documentation and anaesthetic assessments.'},
+    {domain:'business',level:'c1',topic:'grammar',q:'"The results ___ to suggest that early detection reduces mortality." (hedging verb)',ans:'appear',hint:'A verb of seeming — not a modal auxiliary',exp:'<strong>Hedging lexical verbs</strong> — appear, seem, tend, suggest — soften a claim with sophistication beyond modal auxiliaries. Preferred in high-impact journal writing and international presentations.'},
+    {domain:'medical',level:'b1',topic:'grammar',q:'She ___ (work) at the hospital for twelve years.',ans:'has been working',hint:'Present Perfect Continuous — ongoing action from past to present',exp:'<strong>Present Perfect Continuous</strong> ("has been working") emphasises the duration of an ongoing action. It is distinct from Present Perfect Simple: "has worked" focuses on completion; "has been working" focuses on continuity.'},
   ],
   match:[
-    {domain:'medical',level:'b2',topic:'vocab',inst:'Match each medical prefix to its meaning.',left:['tachy-','dys-','hyper-','peri-'],right:['difficult / abnormal','fast / rapid','around / surrounding','above / excessive'],ans:[1,0,3,2],exp:'<strong>Tachy-</strong> (fast): tachycardia, tachypnea. <strong>Dys-</strong> (abnormal): dyspnea, dysarthria. <strong>Hyper-</strong> (excess): hypertension, hyperglycemia. <strong>Peri-</strong> (around): pericardium, peritoneum.'},
-    {domain:'medical',level:'c1',topic:'clinical',inst:'Match each clinical finding to its most likely condition.',left:['Jaundice','Bradycardia + cold intolerance','Polyuria + polydipsia','Barrel chest'],right:['COPD / emphysema','Hepatic dysfunction','Hypothyroidism','Diabetes mellitus'],ans:[1,2,3,0],exp:'<strong>Jaundice</strong> → liver. <strong>Bradycardia + cold intolerance</strong> → hypothyroidism. <strong>Polyuria/polydipsia</strong> → DM. <strong>Barrel chest</strong> → obstructive lung disease. Essential for international case presentations.'},
-    {domain:'business',level:'b2',topic:'vocab',inst:'Match each business term to its definition.',left:['ROI','KPI','B2B','Stakeholder'],right:['Business-to-business model','Party with interest in an org','Return on investment','Key performance indicator'],ans:[2,3,0,1],exp:'<strong>ROI</strong> = efficiency of investment. <strong>KPI</strong> = measurable success metric. <strong>B2B</strong> = institutional sales model. <strong>Stakeholder</strong> = patients, investors, staff, regulators.'},
     {domain:'regular',level:'b1',topic:'grammar',inst:'Match each time marker to its English tense.',left:['already','yet','since','by the time'],right:['Future Perfect','Present Perfect (negative)','Present Perfect','Present Perfect (positive)'],ans:[3,1,2,0],exp:'"<strong>Already</strong>" and "<strong>yet</strong>" signal Present Perfect. "<strong>Since</strong>" marks a start point. "<strong>By the time</strong>" triggers Future or Past Perfect.'},
-    {domain:'medical',level:'b2',topic:'vocab',inst:'Match each drug suffix to its pharmacological class.',left:['-olol','-pril','-statin','-mab'],right:['Monoclonal antibody','Beta-blocker','ACE inhibitor','HMG-CoA reductase inhibitor'],ans:[1,2,3,0],exp:'<strong>-olol</strong> → beta-blockers. <strong>-pril</strong> → ACE inhibitors. <strong>-statin</strong> → statins. <strong>-mab</strong> → monoclonal antibodies (rituximab, pembrolizumab).'},
-    {domain:'medical',level:'c1',topic:'presentation',inst:'Match each phrase to its rhetorical function.',left:['"To elaborate on this finding…"','"Turning now to the implications…"','"This slide demonstrates…"','"In summary, three key points emerge."'],right:['Signposting a transition','Describing visual data','Expanding on a point','Consolidating a conclusion'],ans:[2,0,1,3],exp:'Signposting language organizes comprehension: elaborating deepens one point; transitioning moves sections; describing anchors data; summarizing consolidates retention.'},
+    {domain:'medical',level:'b2',topic:'grammar',inst:'Match each sentence to its grammatical structure.',left:['The scan was reviewed yesterday.','If she had arrived earlier, she would have met the surgeon.','The results will have been processed by noon.','He said he had not eaten since morning.'],right:['Reported Speech (Past Perfect)','Future Perfect Passive','Third Conditional','Past Simple Passive'],ans:[3,2,1,0],exp:'<strong>Passive voice</strong> removes the agent. <strong>Third Conditional</strong> expresses unreal past. <strong>Future Perfect Passive</strong> combines futurity, completion, and passivity. <strong>Reported Speech</strong> applies backshift rules — all essential structures for clinical writing.'},
+    {domain:'medical',level:'c1',topic:'grammar',inst:'Match each modal verb to its primary function in clinical English.',left:['must','should','might','can'],right:['Possibility (uncertain)','Obligation (strong)','Ability / Permission','Recommendation'],ans:[1,3,0,2],exp:'<strong>Must</strong> = strong obligation ("The patient must fast"). <strong>Should</strong> = recommendation ("You should rest"). <strong>Might</strong> = uncertain possibility ("It might be viral"). <strong>Can</strong> = ability/permission ("You can go home today"). Precise modal use signals professional register.'},
+    {domain:'regular',level:'b2',topic:'grammar',inst:'Match each conditional type to its correct structure.',left:['Zero Conditional','First Conditional','Second Conditional','Third Conditional'],right:['If + Past Perfect, would have + PP','If + Present Simple, Present Simple','If + Past Simple, would + infinitive','If + Present Simple, will + infinitive'],ans:[1,3,2,0],exp:'The four conditionals express different degrees of reality: <strong>Zero</strong> = facts; <strong>First</strong> = real future; <strong>Second</strong> = unreal present; <strong>Third</strong> = unreal past. Mastering all four is essential for academic writing, clinical reasoning, and research communication.'},
   ]
 };
 
@@ -1303,10 +1242,17 @@ function render(){
   if(q.type!=='mc'){
     const btn=document.createElement('button'); btn.className='btn-check'; btn.id='btn-check';
     btn.textContent='Check answer'; btn.disabled=true;
-    btn.onclick=()=>checkFill(q,i);
+    if(q.type==='fill') btn.onclick=()=>checkFill(q,i);
+    // match onclick is assigned in buildMatch via window._matchBtn
     act.appendChild(btn);
   }
   body.appendChild(act);
+  // for match: now btn exists in DOM, assign onclick
+  if(q.type==='match' && window._matchOnclick){
+    const b=document.getElementById('btn-check');
+    if(b) b.onclick=window._matchOnclick;
+    window._matchOnclick=null;
+  }
 }
 
 function buildMC(bdy,q,qi){
@@ -1374,12 +1320,14 @@ function buildMatch(bdy,q,qi){
     if(ok){le.classList.add('right');re.classList.add('right');matched[selL]=true;}
     else{le.classList.add('wrong');re.classList.add('wrong');setTimeout(()=>{le.classList.remove('wrong');re.classList.remove('wrong');},750);}
     selL=null;selR=null;
-    if(matched.every(Boolean)){const b=document.getElementById('btn-check');if(b){b.disabled=false;b.textContent='See explanation';}}
+    if(matched.every(Boolean)){ if(window._matchEnableBtn) window._matchEnableBtn(); }
   }
 
   wrap.appendChild(lc); wrap.appendChild(rc); bdy.appendChild(wrap);
-  const btn=document.getElementById('btn-check');
-  if(btn) btn.onclick=()=>{
+
+  // Store the onclick — btn doesn't exist in DOM yet, will be assigned after body.appendChild(act)
+  window._matchOnclick = ()=>{
+    const btn=document.getElementById('btn-check');
     const ok=matched.every(Boolean);
     const cor=matched.filter(Boolean).length;
     showFb(ok,ok?`✓ Perfect — all ${q.left.length} pairs correct`:`${cor} / ${q.left.length} pairs correct`,q.exp);
@@ -1393,6 +1341,12 @@ function buildMatch(bdy,q,qi){
       }
     });
     nextBtn();
+  };
+
+  // Also store enable-btn callback so tryM can call it
+  window._matchEnableBtn = ()=>{
+    const b=document.getElementById('btn-check');
+    if(b){ b.disabled=false; b.textContent='See explanation'; }
   };
 }
 
