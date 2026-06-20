@@ -1168,6 +1168,7 @@ let S={qs:[],cur:0,score:0,ans:[],cfg:{}};
 function pool(c){
   const levels=DIFF[c.level]||['b1','b2','c1','c2','mixed'];
   let p=[];
+  // Pass 1 — match domain + level + topic
   c.types.forEach(t=>{
     QB[t]&&QB[t].forEach(q=>{
       const dm=c.domain==='mixed'||q.domain===c.domain;
@@ -1176,8 +1177,8 @@ function pool(c){
       if(dm&&lv&&tp)p.push({...q,type:t});
     });
   });
-  // fallback — relax domain then topic
-  if(p.length<5){
+  // Pass 2 — relax domain
+  if(p.length<10){
     c.types.forEach(t=>{
       QB[t]&&QB[t].forEach(q=>{
         const lv=levels.includes(q.level)||q.level==='mixed';
@@ -1186,21 +1187,18 @@ function pool(c){
       });
     });
   }
-  if(p.length<5){
+  // Pass 3 — use all questions regardless of filters
+  if(p.length<10){
     c.types.forEach(t=>{
       QB[t]&&QB[t].forEach(q=>{
         if(!p.find(x=>(x.q||x.inst)===(q.q||q.inst)))p.push({...q,type:t});
       });
     });
   }
-  return p.sort(()=>Math.random()-.5).slice(0,10);
-}
-
-function startQuiz(){
-  const c=cfg();
-  S={qs:pool(c),cur:0,score:0,ans:[],cfg:c};
-  show('s-quiz');
-  render();
+  // Pass 4 — if still under 10, repeat until we have 10
+  const base=p.sort(()=>Math.random()-.5);
+  while(p.length<10) p.push({...base[p.length%base.length]});
+  return p.slice(0,10);
 }
 
 // ── RENDER ──
