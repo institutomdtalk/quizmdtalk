@@ -550,7 +550,7 @@ body {
   background:#FFFFFF;
   border-radius:var(--r);
   width:min(500px,100%); max-height:88vh; overflow-y:auto;
-  box-shadow:0 24px 64px rgba(0,0,0,.22);
+  box-shadow:0 24px 64px rgba(0,0,0,.25);
   border-top:3px solid var(--gold);
 }
 .modal-hd {
@@ -567,8 +567,8 @@ body {
   font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--gold);
 }
 .modal-nm { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--navy); font-weight:400 }
-.modal-role { font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-top:.2rem; opacity:.9 }
-.modal-body { padding:1.6rem 1.8rem }
+.modal-role { font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-top:.2rem }
+.modal-body { padding:1.6rem 1.8rem; background:#fff }
 .modal-quote {
   font-family:'Cormorant Garamond',serif;
   font-size:1.05rem; font-style:italic; color:var(--navy);
@@ -586,9 +586,12 @@ body {
   background:#F8F5EF; border-radius:8px; margin-bottom:.35rem;
 }
 .mrec-ico { flex-shrink:0; font-size:.85rem; margin-top:2px; color:var(--gold) }
-.mrec-txt { font-size:.8rem; color:rgba(11,29,58,.7); line-height:1.6 }
+.mrec-txt { font-size:.8rem; color:rgba(11,29,58,.72); line-height:1.6 }
 .mrec-txt strong { color:var(--navy); font-weight:600 }
 .mrec-txt a { color:var(--gold); text-decoration:none }
+/* wrong item highlight inside modal */
+.mrec.wrong-item { border-left:2px solid var(--err); background:#FDF3F3 }
+.mrec.wrong-item .mrec-ico { color:var(--err) }
 .modal-close {
   display:block; width:100%; padding:.85rem; border:none;
   background:var(--navy); color:#fff;
@@ -1456,13 +1459,13 @@ function openMentor(){
 
     // Listar as questões erradas com a estrutura identificada
     wrongQs.forEach(q => {
-      const stem = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0, 80);
-      const structure = detectStructure(allText, q);
-      ph += `<div class="mrec">
-        <div class="mrec-ico">✗</div>
+      const stem = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0, 90);
+      const structure = detectStructure(((q.q||q.inst||'') + ' ' + (q.exp||'')), q);
+      ph += `<div class="mrec wrong-item">
+        <div class="mrec-ico" style="color:var(--err)">✗</div>
         <div class="mrec-txt">
           <strong>${structure}</strong><br>
-          <span style="color:rgba(11,29,58,.5);font-size:.74rem">${stem}${stem.length >= 80 ? '…' : ''}</span>
+          <span style="color:rgba(11,29,58,.45);font-size:.73rem;font-style:italic">${stem}${stem.length >= 90 ? '…' : ''}</span>
         </div>
       </div>`;
     });
