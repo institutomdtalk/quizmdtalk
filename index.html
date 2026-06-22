@@ -1083,6 +1083,9 @@ function cfg(){
 // ── AI QUESTION GENERATION ──
 let abortCtrl = null;
 
+// Histórico de perguntas já usadas nesta sessão (persiste entre rodadas)
+let usedQuestions = [];
+
 async function startQuiz(){
   const c = cfg();
   S = { qs:[], cur:0, score:0, ans:[], cfg:c };
@@ -1098,7 +1101,12 @@ async function startQuiz(){
       headers: { 'Content-Type': 'text/plain' },
       signal: abortCtrl.signal,
       redirect: 'follow',
-      body: JSON.stringify({ domain: c.domain, level: c.level, types: c.types })
+      body: JSON.stringify({
+        domain: c.domain,
+        level:  c.level,
+        types:  c.types,
+        used:   usedQuestions.slice(-30) // envia até 30 últimos enunciados usados
+      })
     });
 
     clearTimeout(timeoutId);
@@ -1108,14 +1116,21 @@ async function startQuiz(){
     const typeRemap = { multiple_choice:'mc', fill_in_blank:'fill', connect_columns:'match' };
     let questions = data.questions.map(q => ({ ...q, type: typeRemap[q.type] || q.type }));
 
-    // Deduplicate — remove perguntas com enunciado repetido
-    const seen = new Set();
+    // Deduplicate client-side também
+    const seen = new Set(usedQuestions.map(s => s.slice(0,50).toLowerCase()));
     questions = questions.filter(q => {
-      const key = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0,60).toLowerCase().trim();
+      const key = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0,50).toLowerCase().trim();
       if(seen.has(key)) return false;
       seen.add(key); return true;
     });
+
     S.qs = questions.slice(0, 10);
+
+    // Registra no histórico
+    S.qs.forEach(q => {
+      const txt = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0,80).trim();
+      if(txt && !usedQuestions.includes(txt)) usedQuestions.push(txt);
+    });
 
     show('s-quiz');
     render();
