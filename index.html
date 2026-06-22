@@ -566,7 +566,7 @@ body {
   display:flex; align-items:center; justify-content:center;
   font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--gold);
 }
-.modal-nm { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--navy); font-weight:400 }
+.modal-nm { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--navy); font-weight:400 }
 .modal-role { font-size:.56rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-top:.2rem }
 .modal-body { padding:1.6rem 1.8rem; background:#fff }
 .modal-quote {
@@ -625,6 +625,7 @@ body {
 #s-result { position:relative }
 
 /* ── LOADING SCREEN ── */
+@keyframes spin { to { transform:rotate(360deg) } }
 #s-loading circle:last-child { transform-origin:32px 32px; animation:spin 1.1s linear infinite }
 .loading-title {
   font-family:'Cormorant Garamond',serif;
@@ -1087,35 +1088,50 @@ async function startQuiz(){
   S = { qs:[], cur:0, score:0, ans:[], cfg:c };
   show('s-loading');
   abortCtrl = new AbortController();
+  const timeoutId = setTimeout(() => abortCtrl.abort(), 20000);
 
-  // ── URL do seu Apps Script — substitua após publicar ──
   const PROXY_URL = 'https://script.google.com/macros/s/AKfycbyDkZFXeBq0xoZQJVRPJHOFKItjRdvXk2R655SQtmtND9nuMuwfion1wZgIMWW7wBlQPQ/exec';
 
   try {
     const res = await fetch(PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // text/plain evita preflight CORS no Apps Script
+      headers: { 'Content-Type': 'text/plain' },
       signal: abortCtrl.signal,
       redirect: 'follow',
-      body: JSON.stringify({
-        domain: c.domain,
-        level:  c.level,
-        types:  c.types
-      })
+      body: JSON.stringify({ domain: c.domain, level: c.level, types: c.types })
     });
 
+    clearTimeout(timeoutId);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Erro no proxy');
 
     const typeRemap = { multiple_choice:'mc', fill_in_blank:'fill', connect_columns:'match' };
-    S.qs = data.questions.map(q => ({ ...q, type: typeRemap[q.type] || q.type }));
+    let questions = data.questions.map(q => ({ ...q, type: typeRemap[q.type] || q.type }));
+
+    // Deduplicate — remove perguntas com enunciado repetido
+    const seen = new Set();
+    questions = questions.filter(q => {
+      const key = (q.q || q.inst || '').replace(/<[^>]+>/g,'').slice(0,60).toLowerCase().trim();
+      if(seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+    S.qs = questions.slice(0, 10);
 
     show('s-quiz');
     render();
 
   } catch(err) {
-    if(err.name === 'AbortError') return;
-    // Fallback banco local
+    clearTimeout(timeoutId);
+    // Cancelado pelo usuário — volta ao setup
+    if(err.name === 'AbortError' && !abortCtrl._userCancelled) {
+      // Timeout expirou — usa fallback silenciosamente
+      S.qs = pool(c);
+      show('s-quiz');
+      render();
+      return;
+    }
+    if(abortCtrl._userCancelled) return;
+    // Qualquer outro erro — fallback
     S.qs = pool(c);
     show('s-quiz');
     render();
@@ -1123,7 +1139,7 @@ async function startQuiz(){
 }
 
 function cancelLoading(){
-  if(abortCtrl) abortCtrl.abort();
+  if(abortCtrl){ abortCtrl._userCancelled = true; abortCtrl.abort(); }
   show('s-setup');
   openWizard();
 }
